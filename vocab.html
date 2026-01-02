@@ -2,594 +2,469 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VocabMaster Pro V6 (GitHub Edition)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VocabMaster V7 (Mobile)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #4f46e5;
-            --primary-dark: #4338ca;
-            --secondary: #64748b;
-            --bg-body: #f1f5f9;
-            --bg-card: #ffffff;
-            --bg-sidebar: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #0f172a;
+            --subtext: #64748b;
             --border: #e2e8f0;
-            --danger: #ef4444;
             --success: #10b981;
-            --warning: #f59e0b;
-            --selected-bg: #e0e7ff;
+            --danger: #ef4444;
+            --nav-height: 60px;
         }
 
         [data-theme="dark"] {
-            --primary: #818cf8;
-            --primary-dark: #6366f1;
-            --secondary: #94a3b8;
-            --bg-body: #0f172a;
-            --bg-card: #1e293b;
-            --bg-sidebar: #1e293b;
-            --text-main: #f1f5f9;
-            --text-muted: #94a3b8;
+            --primary: #60a5fa;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f1f5f9;
+            --subtext: #94a3b8;
             --border: #334155;
-            --selected-bg: #312e81;
         }
 
-        * { box-sizing: border-box; outline: none; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg-body); color: var(--text-main); margin: 0; height: 100vh; display: flex; overflow: hidden; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg); color: var(--text);
+            margin: 0; height: 100vh; display: flex; flex-direction: column;
+            overflow: hidden;
+        }
 
         /* --- LAYOUT --- */
-        .app-container { display: flex; width: 100%; height: 100%; }
+        .app-body {
+            flex: 1; display: flex; overflow: hidden;
+            position: relative;
+        }
 
-        /* SIDEBAR */
+        /* Sidebar (Desktop) / Bottom Nav (Mobile) */
         .sidebar {
-            width: 300px;
-            background: var(--bg-sidebar);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
+            width: 280px; background: var(--card); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; padding: 20px; z-index: 10;
+        }
+
+        .main-view {
+            flex: 1; display: flex; flex-direction: column;
+            padding: 20px; overflow-y: auto; scroll-behavior: smooth;
+        }
+
+        /* --- MOBILE ADAPTATION --- */
+        @media (max-width: 768px) {
+            .app-body { flex-direction: column; padding-bottom: var(--nav-height); }
+            .sidebar {
+                position: fixed; bottom: 0; left: 0; width: 100%; height: var(--nav-height);
+                flex-direction: row; padding: 0; border-top: 1px solid var(--border);
+                border-right: none; justify-content: space-around; align-items: center;
+                box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+            }
+            .sidebar .desktop-only { display: none !important; }
+            .main-view { padding: 15px; padding-bottom: 80px; } /* Space for bottom nav */
+            
+            /* Mobile Nav Icons */
+            .nav-btn {
+                flex-direction: column; font-size: 0.7rem; gap: 4px;
+                background: none; border: none; color: var(--subtext);
+            }
+            .nav-btn.active { color: var(--primary); }
+            .nav-btn span { font-size: 1.2rem; }
+        }
+
+        /* --- COPY PROTECTION --- */
+        /* This prevents selecting anything except the main word */
+        .no-select { user-select: none; -webkit-user-select: none; }
+
+        /* --- INPUT BAR --- */
+        .input-sticky {
+            position: sticky; top: 0; z-index: 5; background: var(--bg);
+            padding-bottom: 10px;
+        }
+        .search-wrapper {
+            display: flex; gap: 10px; background: var(--card);
+            padding: 10px; border-radius: 12px; border: 1px solid var(--border);
+            box-shadow: 0 4px 10px -5px rgba(0,0,0,0.1);
+        }
+        input { border: none; background: transparent; flex: 1; font-size: 1rem; color: var(--text); outline: none; }
+        
+        /* --- LIST ITEMS --- */
+        .word-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; margin-bottom: 12px; overflow: hidden;
+            transition: transform 0.2s;
+        }
+        
+        .word-header {
+            padding: 16px; display: flex; align-items: center; gap: 12px;
+            cursor: pointer;
+        }
+
+        /* Checkbox */
+        .check-circle {
+            width: 24px; height: 24px; border-radius: 50%;
+            border: 2px solid var(--border); display: flex; align-items: center;
+            justify-content: center; transition: 0.2s; cursor: pointer;
+        }
+        .check-circle.checked { background: var(--success); border-color: var(--success); color: white; }
+
+        /* The Word itself (Selectable) */
+        .the-word { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+        
+        /* Icons */
+        .icon-btn {
+            background: none; border: none; cursor: pointer; padding: 5px;
+            font-size: 1.1rem; opacity: 0.6; transition: 0.2s;
+        }
+        .icon-btn:hover { opacity: 1; transform: scale(1.1); }
+
+        /* Details Panel */
+        .details-panel {
+            background: var(--bg); border-top: 1px solid var(--border);
+            padding: 15px; display: none;
+        }
+        .expanded .details-panel { display: block; animation: fadeDown 0.3s; }
+        @keyframes fadeDown { from {opacity:0; transform:translateY(-5px);} to {opacity:1; transform:translateY(0);} }
+
+        .detail-row { margin-bottom: 12px; }
+        .detail-label { font-size: 0.75rem; font-weight: 700; color: var(--subtext); text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .detail-text { font-size: 0.95rem; line-height: 1.5; color: var(--text); }
+
+        textarea.edit-box {
+            width: 100%; background: var(--card); border: 1px solid var(--border);
+            padding: 8px; border-radius: 6px; color: var(--text); font-family: inherit;
+        }
+
+        /* --- FLASHCARD MODE (FULLSCREEN) --- */
+        .fc-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: var(--bg); z-index: 100; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
             padding: 20px;
-            gap: 20px;
-            overflow-y: auto;
-            flex-shrink: 0;
         }
-
-        .logo { font-size: 1.4rem; font-weight: 800; color: var(--primary); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-        .logo span { color: var(--text-main); font-weight: 300; font-size: 0.9rem; }
-
-        .control-panel { background: var(--bg-body); padding: 15px; border-radius: 8px; border: 1px solid var(--border); }
-        .panel-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; display: block; }
-
-        /* Buttons & Inputs */
-        button { cursor: pointer; border: none; border-radius: 6px; padding: 10px; font-weight: 600; font-size: 0.9rem; width: 100%; transition: 0.2s; margin-bottom: 8px; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-dark); }
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
-        .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
-        
-        input, select { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); margin-bottom: 8px; }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2); }
-
-        .range-inputs { display: flex; gap: 5px; }
-
-        /* MAIN CONTENT */
-        .main-content { flex: 1; display: flex; flex-direction: column; padding: 20px; overflow: hidden; position: relative; }
-
-        /* INPUT BAR */
-        .input-bar {
-            background: var(--bg-card); padding: 15px; border-radius: 10px; 
-            box-shadow: 0 4px 15px -5px rgba(0,0,0,0.1); border: 1px solid var(--border);
-            margin-bottom: 20px; display: flex; gap: 10px; flex-direction: column;
+        .fc-card {
+            background: var(--card); width: 100%; max-width: 500px; height: 60vh;
+            border-radius: 20px; border: 1px solid var(--border);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1);
+            text-align: center; padding: 20px; position: relative;
+            transform-style: preserve-3d; transition: transform 0.5s; cursor: pointer;
         }
-        
-        .input-row { display: flex; gap: 10px; position: relative; }
-        
-        .realtime-status {
-            font-size: 0.85rem; padding: 5px 10px; border-radius: 4px; display: none; margin-top: 5px;
+        .fc-word-text { font-size: 2.5rem; font-weight: 800; color: var(--primary); margin-bottom: 10px; }
+        .fc-back { display: none; margin-top: 20px; overflow-y: auto; width: 100%; border-top: 1px solid var(--border); padding-top: 15px; }
+        .fc-actions {
+            display: flex; gap: 15px; width: 100%; max-width: 500px; margin-top: 30px;
         }
-        .status-exists { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; display: block; }
-        .status-new { background: #f0fdf4; color: var(--success); border: 1px solid #bbf7d0; display: block; }
-
-        /* LIST/TABLE */
-        .list-container { flex: 1; overflow-y: auto; padding-right: 5px; }
-        
-        .vocab-item {
-            background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
-            margin-bottom: 10px; transition: all 0.2s; position: relative;
+        .fc-btn {
+            flex: 1; padding: 15px; border-radius: 12px; font-weight: 700; border: none; font-size: 1rem; cursor: pointer;
         }
-        .vocab-item:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .vocab-item.selected { background: var(--selected-bg); border-color: var(--primary); }
-        .vocab-item.completed { border-left: 4px solid var(--success); }
-
-        /* Item Header */
-        .item-header {
-            padding: 15px; display: flex; align-items: center; gap: 15px; cursor: pointer;
-        }
-        
-        .word-index { font-size: 0.8rem; color: var(--text-muted); width: 25px; }
-        .word-main { font-size: 1.1rem; font-weight: 700; flex: 1; }
-        .word-meaning { font-size: 0.9rem; color: var(--text-muted); max-width: 40%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
-        .checkbox-custom {
-            width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 4px;
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
-        }
-        .completed .checkbox-custom { background: var(--success); border-color: var(--success); color: white; }
-
-        /* Expanded Details */
-        .item-details {
-            display: none; padding: 20px; border-top: 1px solid var(--border); background: var(--bg-body);
-            animation: slideDown 0.3s ease;
-        }
-        .expanded .item-details { display: block; }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .detail-box { display: flex; flex-direction: column; gap: 5px; }
-        .detail-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
-        textarea.edit-field {
-            width: 100%; padding: 8px; font-size: 0.9rem; border: 1px solid var(--border);
-            border-radius: 6px; background: var(--bg-card); color: var(--text-main); resize: vertical; min-height: 60px;
-        }
-
-        /* Chips */
-        .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
-        .chip { padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; background: #e2e8f0; color: #475569; }
-        .chip.ant { background: #fee2e2; color: #991b1b; }
-
-        /* FLASHCARD MODAL */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); z-index: 1000;
-            display: none; justify-content: center; align-items: center;
-        }
-        .flashcard {
-            background: var(--bg-card); width: 90%; max-width: 600px; height: 400px;
-            border-radius: 20px; padding: 40px; text-align: center;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); position: relative; cursor: pointer;
-            transform-style: preserve-3d; transition: transform 0.6s;
-        }
-        .fc-word { font-size: 3rem; font-weight: 800; color: var(--primary); margin-bottom: 20px; }
-        .fc-details { display: none; margin-top: 20px; text-align: left; width: 100%; border-top: 1px solid var(--border); padding-top: 20px; }
-        .fc-controls { position: absolute; bottom: 20px; width: 100%; display: flex; justify-content: center; gap: 10px; }
-
-        /* LOADING */
-        .spinner { width: 16px; height: 16px; border: 2px solid #fff; border-bottom-color: transparent; border-radius: 50%; animation: rot 1s linear infinite; display: none; }
-        @keyframes rot { 100% { transform: rotate(360deg); } }
 
     </style>
 </head>
 <body>
 
-<div class="app-container">
+<div class="app-body">
     
-    <aside class="sidebar">
-        <div class="logo">VocabMaster <span>Pro</span></div>
+    <div class="main-view">
         
-        <div class="control-panel">
-            <span class="panel-label">Study Mode</span>
-            <button class="btn-primary" onclick="startFlashcards()">⚡ Study Flashcards</button>
-            <div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 5px;">
-                Only shows uncompleted words
+        <div class="input-sticky">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h2 style="margin:0; font-size:1.2rem;" class="no-select">VocabMaster <span style="font-size:0.8rem; color:var(--primary);">V7</span></h2>
+                <button onclick="toggleTheme()" class="icon-btn no-select">🌗</button>
+            </div>
+            
+            <div class="search-wrapper">
+                <input type="text" id="inputBox" placeholder="Type new word or search..." autocomplete="off">
+                <button onclick="addWord()" class="icon-btn" style="color:var(--primary); font-weight:bold;">➤</button>
+            </div>
+            
+            <div style="display:flex; gap:10px; margin-top:10px; overflow-x:auto;" class="no-select">
+                <button class="nav-btn active" onclick="setFilter('all', this)">All</button>
+                <button class="nav-btn" onclick="setFilter('pending', this)">Pending</button>
+                <button class="nav-btn" onclick="setFilter('completed', this)">Completed</button>
+                <select id="sortMode" onchange="render()" style="background:transparent; border:none; color:var(--subtext); font-weight:600;">
+                    <option value="newest">Newest</option>
+                    <option value="alpha">A-Z</option>
+                </select>
             </div>
         </div>
 
-        <div class="control-panel">
-            <span class="panel-label">Filters & Sort</span>
-            <select id="sortSelect" onchange="renderList()">
-                <option value="newest">📅 Newest First</option>
-                <option value="alpha">🔤 Alphabetical (A-Z)</option>
-                <option value="status">✅ Completed First</option>
-                <option value="status_inv">⬜ Pending First</option>
-            </select>
-            <div class="range-inputs">
-                <input type="number" id="rangeStart" placeholder="From #">
-                <input type="number" id="rangeEnd" placeholder="To #">
-            </div>
-            <button class="btn-outline" onclick="selectRange()">Select Range</button>
+        <div id="vocabList"></div>
+
+    </div>
+
+    <nav class="sidebar no-select">
+        <div class="desktop-only" style="width:100%;">
+            <h3>Controls</h3>
+            <button onclick="startFlashcards()" class="fc-btn" style="background:var(--primary); color:white; width:100%; margin-bottom:10px;">⚡ Start Flashcards</button>
+            <button onclick="exportData()" class="fc-btn" style="background:var(--border); color:var(--text); width:100%;">💾 Backup</button>
         </div>
 
-        <div class="control-panel">
-            <span class="panel-label">Bulk Actions</span>
-            <button class="btn-outline" onclick="bulkAction('complete')">Mark Selected Done</button>
-            <button class="btn-outline" onclick="bulkAction('delete')" style="color:var(--danger); border-color:var(--danger);">Delete Selected</button>
-            <button class="btn-outline" onclick="exportData()">⬇️ Backup Data</button>
-            <button class="btn-outline" onclick="toggleTheme()">🌗 Toggle Theme</button>
-        </div>
-        
-        <div style="margin-top:auto; font-size:0.8rem; color:var(--text-muted);">
-            <span id="totalCount">0</span> Words stored.<br>
-            <span id="selCount">0</span> Selected.
-        </div>
-    </aside>
-
-    <main class="main-content">
-        
-        <div class="input-bar">
-            <div class="input-row">
-                <input type="text" id="wordInput" placeholder="Type a new word here (e.g. 'Serendipity')..." autocomplete="off">
-                <button class="btn-primary" style="width: auto; padding: 0 30px;" onclick="addWord()">
-                    <span id="addBtnText">Add</span>
-                    <span class="spinner" id="addSpinner"></span>
-                </button>
-            </div>
-            <div id="statusMsg" class="realtime-status"></div>
-        </div>
-
-        <div class="list-container" id="vocabList">
-            </div>
-
-    </main>
+        <button class="nav-btn" onclick="setFilter('all', this)"><span>🏠</span>Home</button>
+        <button class="nav-btn" onclick="startFlashcards()"><span>⚡</span>Study</button>
+        <button class="nav-btn" onclick="exportData()"><span>💾</span>Save</button>
+    </nav>
 </div>
 
-<div class="modal-overlay" id="fcModal">
-    <div class="flashcard" id="flashcard" onclick="flipCard()">
-        <div class="fc-word" id="fcWord">Ready?</div>
-        <div style="color:var(--text-muted); font-size:0.9rem;">(Click card to flip)</div>
+<div class="fc-overlay" id="flashOverlay">
+    <div style="position:absolute; top:20px; right:20px; z-index:101;">
+        <button onclick="closeFlash()" style="background:rgba(0,0,0,0.5); color:white; border:none; border-radius:50%; width:40px; height:40px;">✕</button>
+    </div>
+    
+    <div class="fc-card" id="fcCard" onclick="flipCard()">
+        <div style="font-size:0.8rem; color:gray; margin-bottom:10px;" class="no-select">TAP TO REVEAL</div>
+        <div class="fc-word-text" id="fcWord">Word</div>
         
-        <div class="fc-details" id="fcDetails">
-            <h3 id="fcBangla" style="color:var(--primary);">...</h3>
-            <p id="fcDef">...</p>
-            <p id="fcNuance" style="font-style:italic; color:var(--text-muted);">...</p>
-        </div>
-
-        <div class="fc-controls" onclick="event.stopPropagation()">
-            <button class="btn-outline" style="width:100px; background:var(--bg-card);" onclick="nextCard(false)">Still Learning</button>
-            <button class="btn-primary" style="width:100px; background:var(--success);" onclick="nextCard(true)">Mastered!</button>
-            <button class="btn-outline" style="width:60px; background:var(--bg-card); color:var(--danger); border-color:var(--danger);" onclick="closeFlashcards()">Exit</button>
+        <div class="fc-back" id="fcBack">
+            <h3 id="fcDef" style="margin-top:0;">Definition</h3>
+            <p id="fcContext" style="font-style:italic; color:var(--subtext);">Context</p>
         </div>
     </div>
+
+    <div class="fc-actions">
+        <button class="fc-btn" style="background:var(--card); border:2px solid var(--danger); color:var(--danger);" onclick="nextCard(false)">Hard</button>
+        <button class="fc-btn" style="background:var(--success); color:white;" onclick="nextCard(true)">Easy (Mastered)</button>
+    </div>
+    <div style="margin-top:15px; color:gray;" id="fcProgress">0 / 0</div>
 </div>
 
 <script>
-    // --- STATE MANAGEMENT ---
-    let db = JSON.parse(localStorage.getItem('vocab_v6_pro')) || [];
-    let selectedIds = new Set();
-    let lastSelectedIndex = -1; // For Shift+Click
+    // --- STATE ---
+    let db = JSON.parse(localStorage.getItem('vocab_v7')) || [];
+    let currentFilter = 'all'; // all, pending, completed
     let studyQueue = [];
-
-    // --- DOM ELEMENTS ---
-    const wordInput = document.getElementById('wordInput');
-    const listEl = document.getElementById('vocabList');
-    const statusMsg = document.getElementById('statusMsg');
-    const sortSelect = document.getElementById('sortSelect');
-    const totalCount = document.getElementById('totalCount');
-    const selCount = document.getElementById('selCount');
-
-    // --- INITIALIZATION ---
-    if(localStorage.getItem('theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
-    renderList();
-
-    // --- EVENT LISTENERS ---
     
-    // Real-time Type Detection & Filter
-    wordInput.addEventListener('input', (e) => {
-        const val = e.target.value.trim();
-        renderList(val); // Filter list by what's being typed
+    // --- INIT ---
+    if(localStorage.getItem('theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
+    render();
 
-        if (val.length > 0) {
-            const exists = db.some(i => i.word.toLowerCase() === val.toLowerCase());
-            if (exists) {
-                statusMsg.className = 'realtime-status status-exists';
-                statusMsg.innerText = `⚠️ '${val}' is already in your list!`;
-            } else {
-                statusMsg.className = 'realtime-status status-new';
-                statusMsg.innerText = `✨ New word! Press Enter to auto-fetch details.`;
-            }
-        } else {
-            statusMsg.style.display = 'none';
-        }
-    });
-
-    wordInput.addEventListener('keypress', (e) => {
-        if(e.key === 'Enter') addWord();
-    });
-
-    // --- CORE LOGIC ---
+    // --- MAIN LOGIC ---
 
     async function addWord() {
-        const word = wordInput.value.trim();
+        const input = document.getElementById('inputBox');
+        const word = input.value.trim();
         if(!word) return;
 
-        // Prevent Duplicate
+        // Check if exists
         if(db.some(i => i.word.toLowerCase() === word.toLowerCase())) {
-            alert("Word already exists!"); return;
+            alert('Word already exists!'); return;
         }
-
-        // UI Loading
-        const btnText = document.getElementById('addBtnText');
-        const spinner = document.getElementById('addSpinner');
-        btnText.style.display = 'none'; spinner.style.display = 'inline-block';
-        wordInput.disabled = true;
 
         const newEntry = {
             id: Date.now(),
             word: word.charAt(0).toUpperCase() + word.slice(1),
-            definition: "",
-            bangla: "",
-            nuance: "", // Context/Example
-            synonyms: [],
-            antonyms: [],
-            mnemonics: "",
-            mistakes: "",
+            def: "Loading...",
+            context: "",
+            audio: "",
             completed: false,
-            created: new Date().toISOString()
+            created: Date.now()
         };
 
+        // Fetch API Data
         try {
-            // PARALLEL API CALLS
-            const [dictRes, transRes] = await Promise.allSettled([
-                fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`),
-                fetch(`https://api.mymemory.translated.net/get?q=${word}&langpair=en|bn`)
-            ]);
-
-            // Process Dictionary API
-            if(dictRes.status === 'fulfilled' && dictRes.value.ok) {
-                const data = await dictRes.value.json();
+            const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+            if(res.ok) {
+                const data = await res.json();
                 const main = data[0];
-                const meaning = main.meanings[0];
+                newEntry.def = main.meanings[0].definitions[0].definition;
                 
-                newEntry.definition = meaning.definitions[0].definition;
-                const example = meaning.definitions.find(d => d.example);
-                if(example) newEntry.nuance = `Context: "${example.example}"`;
+                // Get Audio
+                const phonetics = main.phonetics.find(p => p.audio);
+                if(phonetics) newEntry.audio = phonetics.audio;
 
-                // Synonyms
-                let syns = new Set();
-                let ants = new Set();
-                main.meanings.forEach(m => {
-                    m.synonyms.forEach(s => syns.add(s));
-                    m.antonyms.forEach(a => ants.add(a));
-                });
-                newEntry.synonyms = Array.from(syns).slice(0, 5);
-                newEntry.antonyms = Array.from(ants).slice(0, 3);
+                // Get Context
+                const example = main.meanings[0].definitions.find(d => d.example);
+                if(example) newEntry.context = example.example;
+            } else {
+                newEntry.def = "Definition not found. Click 'Explain with AI' for details.";
             }
-
-            // Process Translation API (Bangla)
-            if(transRes.status === 'fulfilled' && transRes.value.ok) {
-                const data = await transRes.value.json();
-                if(data.responseData && data.responseData.translatedText) {
-                    newEntry.bangla = data.responseData.translatedText;
-                }
-            }
-
-        } catch (err) {
-            console.error(err);
-        }
+        } catch(e) { console.log(e); }
 
         db.unshift(newEntry);
         save();
-        renderList();
-        
-        // Reset UI
-        wordInput.value = '';
-        wordInput.disabled = false;
-        btnText.style.display = 'inline'; spinner.style.display = 'none';
-        statusMsg.style.display = 'none';
-        wordInput.focus();
+        render();
+        input.value = '';
     }
 
-    // --- RENDERING & SELECTION ---
-
-    function renderList(filterText = '') {
-        listEl.innerHTML = '';
+    // --- RENDERING ---
+    function render() {
+        const list = document.getElementById('vocabList');
+        list.innerHTML = '';
         
-        let data = [...db];
+        const search = document.getElementById('inputBox').value.toLowerCase();
+        const sort = document.getElementById('sortMode').value;
 
-        // 1. Filter
-        if(filterText) {
-            data = data.filter(i => i.word.toLowerCase().includes(filterText.toLowerCase()));
-        }
-
-        // 2. Sort
-        const sortMode = sortSelect.value;
-        data.sort((a, b) => {
-            if(sortMode === 'alpha') return a.word.localeCompare(b.word);
-            if(sortMode === 'status') return (a.completed === b.completed) ? 0 : a.completed ? -1 : 1;
-            if(sortMode === 'status_inv') return (a.completed === b.completed) ? 0 : a.completed ? 1 : -1;
-            return new Date(b.created) - new Date(a.created); // Default Newest
+        let data = db.filter(i => {
+            if(currentFilter === 'pending' && i.completed) return false;
+            if(currentFilter === 'completed' && !i.completed) return false;
+            return i.word.toLowerCase().includes(search);
         });
 
-        // 3. Render
-        data.forEach((item, index) => {
-            const isSel = selectedIds.has(item.id);
-            const el = document.createElement('div');
-            el.className = `vocab-item ${item.completed ? 'completed' : ''} ${isSel ? 'selected' : ''}`;
-            el.id = `item-${item.id}`;
+        // Sorting
+        if(sort === 'alpha') data.sort((a,b) => a.word.localeCompare(b.word));
+        else data.sort((a,b) => b.created - a.created);
 
-            const synTags = item.synonyms.map(s => `<span class="chip">${s}</span>`).join('');
-            const antTags = item.antonyms.map(a => `<span class="chip ant">${a}</span>`).join('');
+        data.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'word-card';
+            if(item.completed) div.style.opacity = '0.7';
 
-            el.innerHTML = `
-                <div class="item-header" onclick="handleItemClick(event, ${item.id}, ${index}, this)">
-                    <div class="checkbox-custom" onclick="toggleComplete(event, ${item.id})">
-                        ${item.completed ? '✔' : ''}
+            // Special HTML construction to prevent Copying meaning
+            div.innerHTML = `
+                <div class="word-header" onclick="toggleExpand(${item.id})">
+                    <div class="check-circle ${item.completed ? 'checked' : ''} no-select" 
+                         onclick="toggleCheck(event, ${item.id})">✔</div>
+                    
+                    <div style="flex:1;">
+                        <div class="the-word">${item.word}</div>
+                        <div class="no-select" style="font-size:0.85rem; color:var(--subtext); margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px;">
+                            ${item.def}
+                        </div>
                     </div>
-                    <div class="word-index">#${db.indexOf(item) + 1}</div>
-                    <div class="word-main">
-                        ${item.word} 
-                        <span style="font-weight:400; font-size:0.9rem; color:var(--primary); margin-left:8px;">${item.bangla}</span>
+
+                    <div class="no-select" style="display:flex; gap:10px;">
+                        ${item.audio ? `<button class="icon-btn" onclick="playAudio(event, '${item.audio}')">🔊</button>` : ''}
+                        <span style="font-size:0.8rem; color:var(--subtext);">▼</span>
                     </div>
-                    <div class="word-meaning">${item.definition}</div>
-                    <button class="btn-outline" style="width:30px; padding:2px;" onclick="toggleDetails(event, ${item.id})">▼</button>
                 </div>
-                
-                <div class="item-details" id="details-${item.id}" onclick="event.stopPropagation()">
-                    <div class="details-grid">
-                        <div class="detail-box">
-                            <span class="detail-label">Definition & Nuance</span>
-                            <textarea class="edit-field" onchange="updateField(${item.id}, 'definition', this.value)">${item.definition}</textarea>
-                            <textarea class="edit-field" placeholder="Nuance / Context..." onchange="updateField(${item.id}, 'nuance', this.value)">${item.nuance}</textarea>
-                        </div>
-                        <div class="detail-box">
-                            <span class="detail-label">Bangla & Memory Tricks</span>
-                            <input type="text" class="edit-field" style="min-height:35px;" value="${item.bangla}" onchange="updateField(${item.id}, 'bangla', this.value)">
-                            <textarea class="edit-field" placeholder="Mnemonic / Memory Trick..." onchange="updateField(${item.id}, 'mnemonics', this.value)">${item.mnemonics}</textarea>
-                            <input type="text" class="edit-field" style="min-height:35px;" placeholder="Common Mistake?" value="${item.mistakes}" onchange="updateField(${item.id}, 'mistakes', this.value)">
-                        </div>
+
+                <div class="details-panel no-select" id="panel-${item.id}">
+                    <div class="detail-row">
+                        <span class="detail-label">Definition</span>
+                        <textarea class="edit-box" onchange="updateItem(${item.id}, 'def', this.value)">${item.def}</textarea>
                     </div>
-                    <div class="detail-box" style="margin-top:10px;">
-                        <span class="detail-label">Related Words</span>
-                        <div class="chips">${synTags} ${antTags}</div>
+                    <div class="detail-row">
+                        <span class="detail-label">Context / Nuance</span>
+                        <textarea class="edit-box" onchange="updateItem(${item.id}, 'context', this.value)">${item.context}</textarea>
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:15px;">
+                        <button class="fc-btn" style="background:#4285F4; color:white; font-size:0.9rem; padding:10px;" onclick="googleExplain('${item.word}')">
+                            🤖 Explain with AI (Google)
+                        </button>
+                        <button class="fc-btn" style="background:var(--danger); color:white; font-size:0.9rem; padding:10px;" onclick="deleteItem(${item.id})">
+                            🗑 Delete
+                        </button>
                     </div>
                 </div>
             `;
-            listEl.appendChild(el);
+            list.appendChild(div);
         });
-
-        // Update Counts
-        totalCount.innerText = db.length;
-        selCount.innerText = selectedIds.size;
     }
 
-    // --- SELECTION LOGIC ---
-
-    function handleItemClick(e, id, index, el) {
-        // Prevent triggering if clicked on checkbox or expand button
-        if(e.target.tagName === 'BUTTON' || e.target.classList.contains('checkbox-custom')) return;
-
-        if (e.shiftKey && lastSelectedIndex !== -1) {
-            // Range Select logic (Visual based on current sorted view)
-            const allItems = Array.from(listEl.children);
-            const start = Math.min(lastSelectedIndex, index);
-            const end = Math.max(lastSelectedIndex, index);
-            
-            for(let i=start; i<=end; i++) {
-                const itemId = parseInt(allItems[i].id.split('-')[1]);
-                selectedIds.add(itemId);
-            }
-        } else if (e.ctrlKey || e.metaKey) {
-            // Toggle Single
-            if(selectedIds.has(id)) selectedIds.delete(id);
-            else selectedIds.add(id);
-            lastSelectedIndex = index;
-        } else {
-            // Single Select (Clear others)
-            selectedIds.clear();
-            selectedIds.add(id);
-            lastSelectedIndex = index;
-        }
-        renderList(wordInput.value.trim()); // Re-render to show highlights
-    }
-
-    function selectRange() {
-        const start = parseInt(document.getElementById('rangeStart').value) - 1;
-        const end = parseInt(document.getElementById('rangeEnd').value) - 1;
-        if(isNaN(start) || isNaN(end)) return;
-
-        // Select based on current DB order
-        selectedIds.clear();
-        db.slice(start, end + 1).forEach(item => selectedIds.add(item.id));
-        renderList();
-    }
-
-    // --- DATA UPDATES ---
-
-    function toggleDetails(e, id) {
-        e.stopPropagation();
-        const el = document.getElementById(`item-${id}`);
-        el.classList.toggle('expanded');
-    }
-
-    function toggleComplete(e, id) {
+    // --- ACTIONS ---
+    function toggleCheck(e, id) {
         e.stopPropagation();
         const item = db.find(i => i.id === id);
         item.completed = !item.completed;
-        save();
-        renderList(wordInput.value.trim());
+        save(); render();
     }
 
-    function updateField(id, key, val) {
-        const item = db.find(i => i.id === id);
-        item[key] = val;
-        save();
-    }
-
-    function bulkAction(action) {
-        if(selectedIds.size === 0) return alert("Select items first!");
-        
-        if(action === 'delete') {
-            if(!confirm(`Delete ${selectedIds.size} items?`)) return;
-            db = db.filter(i => !selectedIds.has(i.id));
-        } else if (action === 'complete') {
-            db.forEach(i => { if(selectedIds.has(i.id)) i.completed = true; });
+    function toggleExpand(id) {
+        const panel = document.getElementById(`panel-${id}`);
+        const parent = panel.parentElement;
+        if(panel.style.display === 'block') {
+            panel.style.display = 'none';
+            parent.classList.remove('expanded');
+        } else {
+            panel.style.display = 'block';
+            parent.classList.add('expanded');
         }
-        
-        selectedIds.clear();
-        save();
-        renderList();
     }
 
-    // --- FLASHCARD SYSTEM ---
+    function playAudio(e, url) {
+        e.stopPropagation();
+        new Audio(url).play();
+    }
 
+    function googleExplain(word) {
+        const query = encodeURIComponent(`nuance context and memory trick for vocabulary word "${word}"`);
+        window.open(`https://www.google.com/search?q=${query}`, '_blank');
+    }
+
+    function setFilter(type, btn) {
+        currentFilter = type;
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        if(btn) btn.classList.add('active');
+        render();
+    }
+
+    function updateItem(id, field, val) {
+        db.find(i => i.id === id)[field] = val;
+        save();
+    }
+    
+    function deleteItem(id) {
+        if(confirm('Delete?')) {
+            db = db.filter(i => i.id !== id);
+            save(); render();
+        }
+    }
+
+    // --- FLASHCARDS ---
     function startFlashcards() {
         studyQueue = db.filter(i => !i.completed);
-        if(studyQueue.length === 0) return alert("All words mastered! Reset some to study.");
+        if(studyQueue.length === 0) return alert("All pending words mastered!");
         
         // Shuffle
         studyQueue.sort(() => Math.random() - 0.5);
         
-        document.getElementById('fcModal').style.display = 'flex';
-        showCard(studyQueue[0]);
+        document.getElementById('flashOverlay').style.display = 'flex';
+        loadCard();
     }
 
-    function showCard(item) {
-        if(!item) { closeFlashcards(); return alert("Session Done!"); }
-        
-        const card = document.getElementById('flashcard');
-        const details = document.getElementById('fcDetails');
-        
-        // Reset State
-        card.style.transform = 'rotateY(0deg)';
-        details.style.display = 'none';
-        
+    function loadCard() {
+        if(studyQueue.length === 0) {
+            alert("Session Complete!");
+            closeFlash(); return;
+        }
+        const item = studyQueue[0];
         document.getElementById('fcWord').innerText = item.word;
-        document.getElementById('fcBangla').innerText = item.bangla || "No Bangla Meanning";
-        document.getElementById('fcDef').innerText = item.definition || "No definition";
-        document.getElementById('fcNuance').innerText = item.mnemonics || item.nuance || "";
+        document.getElementById('fcDef').innerText = item.def;
+        document.getElementById('fcContext').innerText = item.context || "No context added.";
+        document.getElementById('fcBack').style.display = 'none';
+        
+        const total = db.filter(i => !i.completed).length;
+        document.getElementById('fcProgress').innerText = `Remaining: ${studyQueue.length}`;
     }
 
     function flipCard() {
-        const details = document.getElementById('fcDetails');
-        details.style.display = 'block';
+        document.getElementById('fcBack').style.display = 'block';
     }
 
     function nextCard(mastered) {
-        const currentItem = studyQueue[0];
+        const item = studyQueue.shift();
         if(mastered) {
-            const dbItem = db.find(i => i.id === currentItem.id);
-            if(dbItem) dbItem.completed = true;
-            save();
-            renderList(); // Update background list
-            studyQueue.shift(); // Remove from queue
+            db.find(i => i.id === item.id).completed = true;
+            save(); render();
         } else {
-            // Move to end of queue to repeat
-            studyQueue.push(studyQueue.shift());
+            studyQueue.push(item); // Re-queue
         }
-        showCard(studyQueue[0]);
+        loadCard();
     }
 
-    function closeFlashcards() {
-        document.getElementById('fcModal').style.display = 'none';
+    function closeFlash() {
+        document.getElementById('flashOverlay').style.display = 'none';
+        render();
     }
 
     // --- UTILS ---
-    function save() { localStorage.setItem('vocab_v6_pro', JSON.stringify(db)); }
-    
-    function exportData() {
-        const blob = new Blob([JSON.stringify(db, null, 2)], {type: "application/json"});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = "vocab_backup.json";
-        a.click();
-    }
-
+    function save() { localStorage.setItem('vocab_v7', JSON.stringify(db)); }
     function toggleTheme() {
         const isDark = document.body.getAttribute('data-theme') === 'dark';
         document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
         localStorage.setItem('theme', isDark ? 'light' : 'dark');
     }
-</script>
+    function exportData() {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(db)], {type:'application/json'}));
+        a.download = 'vocab_backup.json'; a.click();
+    }
+    
+    // Search Listener
+    document.getElementById('inputBox').addEventListener('input', render);
 
+</script>
 </body>
 </html>
